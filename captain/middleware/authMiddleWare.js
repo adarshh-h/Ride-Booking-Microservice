@@ -5,16 +5,19 @@ const blacklisttokenModel = require('../models/blacklisttoken.model');
 
 module.exports.captainAuth = async (req, res, next) => {
     try {
-        const token = req.cookies.token || req.headers.authorization.split(' ')[ 1 ];
+        const token =
+            req.cookies.token ||
+            (req.headers.authorization &&
+                req.headers.authorization.split(' ')[1]); // ✅ safe check
 
         if (!token) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
-        const isBlacklisted = await blacklisttokenModel.find({ token });
+        const isBlacklisted = await blacklisttokenModel.findOne({ token }); // ✅ findOne not find
 
-        if (isBlacklisted.length) {
-            return res.status(401).json({ message: 'Unauthorized' });
+        if (isBlacklisted) {
+            return res.status(401).json({ message: 'Token expired. Login again.' });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -26,9 +29,9 @@ module.exports.captainAuth = async (req, res, next) => {
         }
 
         req.captain = captain;
-
         next();
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(401).json({ message: 'Invalid token' }); // ✅ 401 not 500
     }
 }

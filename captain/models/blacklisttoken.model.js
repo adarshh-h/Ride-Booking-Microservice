@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const blacklistTokenSchema = new mongoose.Schema({
     token: {
         type: String,
@@ -9,11 +8,10 @@ const blacklistTokenSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-        expires: 3600 // 1 hour in seconds
+        expires: '8h' // ✅ matches JWT expiry, string format
     }
-}, {
-    timestamps: true
-})
+    // ✅ removed timestamps:true — it conflicts with your createdAt TTL field
+});
 
 
 module.exports = mongoose.model('blacklisttoken', blacklistTokenSchema);

@@ -8,7 +8,7 @@ const blacklistTokenSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 3600
+    expires: '8h'  // ✅ matches your JWT expiry of 8h
   }
 });
 

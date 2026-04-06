@@ -2,7 +2,9 @@ const userModel = require('../models/user.model');
 const blacklisttokenModel = require('../models/blacklisttoken.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
+const { subscribeToQueue } = require('../service/rabbit')
+const EventEmitter = require('events');
+const rideEventEmitter = new EventEmitter();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '8h' });
@@ -69,11 +71,17 @@ module.exports.login = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    // res.cookie('token', token, {
+    //   httpOnly: true,
+    //   secure: false,
+    //   sameSite: 'lax'
+    // });
     res.cookie('token', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax'
-    });
+  httpOnly: true,
+  secure: false,
+  sameSite: 'lax',
+  maxAge: 8 * 60 * 60 * 1000 // ✅ Add this: 8 hours in ms (matches JWT expiry)
+});
 
     res.json({
       token,
@@ -120,3 +128,42 @@ module.exports.profile = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// module.exports.acceptedRide = async (req, res) => {
+//     // Long polling: wait for 'ride-accepted' event
+//     rideEventEmitter.once('ride-accepted', (data) => {
+//         res.send(data);
+//     });
+
+//     // Set timeout for long polling (e.g., 30 seconds)
+//     setTimeout(() => {
+//         res.status(204).send();
+//     }, 30000);
+// }
+module.exports.acceptedRide = async (req, res) => {
+
+    let isResponded = false; // ✅ track response
+
+    const handler = (data) => {
+        if (!isResponded) {
+            isResponded = true;
+            res.json(data);
+        }
+    };
+
+    // listen once
+    rideEventEmitter.once('ride-accepted', handler);
+
+    // timeout
+    setTimeout(() => {
+        if (!isResponded) {
+            isResponded = true;
+            res.status(204).send();
+        }
+    }, 30000);
+};
+
+subscribeToQueue('ride-accepted', async (msg) => {
+    const data = JSON.parse(msg);
+    rideEventEmitter.emit('ride-accepted', data);
+});

@@ -44,7 +44,7 @@ module.exports.acceptRide = async (req, res) => {
                 message: 'Ride already accepted or not found'
             });
         }
-
+publishToQueue("ride-accepted", JSON.stringify(ride));
         res.json({
             message: 'Ride accepted successfully',
             ride

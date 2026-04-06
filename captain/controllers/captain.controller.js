@@ -8,10 +8,16 @@ const pendingRequests = [];
 module.exports.register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
+
+        // ✅ Add validation
+        if (!name || !email || !password) {
+            return res.status(400).json({ message: 'All fields required' });
+        }
+
         const captain = await captainModel.findOne({ email });
 
         if (captain) {
-            return res.status(400).json({ message: 'captain already exists' });
+            return res.status(400).json({ message: 'Captain already exists' });
         }
 
         const hash = await bcrypt.hash(password, 10);
@@ -19,13 +25,19 @@ module.exports.register = async (req, res) => {
 
         await newcaptain.save();
 
-        const token = jwt.sign({ id: newcaptain._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: newcaptain._id }, process.env.JWT_SECRET, { expiresIn: '8h' });
 
-        res.cookie('token', token);
+        // ✅ Add cookie options
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax'
+        });
 
         delete newcaptain._doc.password;
 
-        res.send({ token, newcaptain });
+        res.status(201).send({ token, newcaptain });
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -34,6 +46,12 @@ module.exports.register = async (req, res) => {
 module.exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // ✅ Add validation
+        if (!email || !password) {
+            return res.status(400).json({ message: 'All fields required' });
+        }
+
         const captain = await captainModel
             .findOne({ email })
             .select('+password');
@@ -48,25 +66,35 @@ module.exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-
         const token = jwt.sign({ id: captain._id }, process.env.JWT_SECRET, { expiresIn: '8h' });
 
         delete captain._doc.password;
 
-        res.cookie('token', token);
+        // ✅ Add cookie options
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'lax'
+        });
 
         res.send({ token, captain });
 
     } catch (error) {
-
         res.status(500).json({ message: error.message });
     }
-
 }
 
 module.exports.logout = async (req, res) => {
     try {
-        const token = req.cookies.token;
+        const token =
+            req.cookies.token ||
+            (req.headers.authorization &&
+                req.headers.authorization.split(' ')[1]); // ✅ added header check
+
+        if (!token) {
+            return res.status(400).json({ message: 'No token provided' });
+        }
+
         await blacklisttokenModel.create({ token });
         res.clearCookie('token');
         res.send({ message: 'captain logged out successfully' });
