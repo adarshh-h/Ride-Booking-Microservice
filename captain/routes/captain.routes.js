@@ -10,5 +10,7 @@ router.get('/logout', captainController.logout);
 router.get('/profile', authMiddleware.captainAuth, captainController.profile);
 router.patch('/aviability', authMiddleware.captainAuth, captainController.toggleAvailability);
 
+// ✅ Long Polling Endpoint for New Rides
+router.get('/new-ride', authMiddleware.captainAuth, captainController.waitForNewRide);
 
 module.exports = router;

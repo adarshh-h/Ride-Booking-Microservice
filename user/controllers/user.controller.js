@@ -3,12 +3,12 @@ const blacklisttokenModel = require('../models/blacklisttoken.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Helper function
+
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '8h' });
 };
 
-// REGISTER
+
 module.exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -52,7 +52,7 @@ module.exports.register = async (req, res) => {
   }
 };
 
-// LOGIN
+
 module.exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -89,7 +89,7 @@ module.exports.login = async (req, res) => {
   }
 };
 
-// LOGOUT
+
 module.exports.logout = async (req, res) => {
   try {
     const token =
@@ -112,7 +112,7 @@ module.exports.logout = async (req, res) => {
   }
 };
 
-// PROFILE
+
 module.exports.profile = async (req, res) => {
  try {
         res.send(req.user);

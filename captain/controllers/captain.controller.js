@@ -2,6 +2,8 @@ const captainModel = require('../models/captain.model');
 const blacklisttokenModel = require('../models/blacklisttoken.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { subscribeToQueue } = require('../service/rabbit');
+const pendingRequests = [];
 
 module.exports.register = async (req, res) => {
     try {
@@ -47,7 +49,7 @@ module.exports.login = async (req, res) => {
         }
 
 
-        const token = jwt.sign({ id: captain._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: captain._id }, process.env.JWT_SECRET, { expiresIn: '8h' });
 
         delete captain._doc.password;
 
@@ -93,3 +95,29 @@ module.exports.toggleAvailability = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
+
+module.exports.waitForNewRide = async (req, res) => {
+    // Set timeout for long polling (e.g., 30 seconds)
+    req.setTimeout(30000, () => {
+        res.status(204).end(); // No Content
+    });
+
+    // Add the response object to the pendingRequests array
+    pendingRequests.push(res);
+};
+
+
+subscribeToQueue("new-ride", (data) => {
+    const rideData = JSON.parse(data);
+
+    console.log("New ride request received:", rideData);
+    // Here you can implement logic to notify available captains about the new ride request
+    // For example, you could emit a WebSocket event to all connected captains  
+      // Send the new ride data to all pending requests
+    pendingRequests.forEach(res => {
+        res.json(rideData);
+    });
+
+    // Clear the pending requests
+    pendingRequests.length = 0;
+});

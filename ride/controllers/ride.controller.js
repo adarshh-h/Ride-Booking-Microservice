@@ -1,6 +1,6 @@
 const rideModel = require('../models/ride.model');
+const { subscribeToQueue, publishToQueue } = require('../service/rabbit')
 
-// ✅ Create Ride
 module.exports.createRide = async (req, res) => {
     try {
         const { pickup, destination } = req.body;
@@ -14,7 +14,7 @@ module.exports.createRide = async (req, res) => {
             pickup,
             destination
         });
-
+        publishToQueue("new-ride", JSON.stringify(ride));
         res.status(201).json(ride);
 
     } catch (error) {
@@ -22,7 +22,6 @@ module.exports.createRide = async (req, res) => {
     }
 };
 
-// ✅ Accept Ride (BEST VERSION)
 module.exports.acceptRide = async (req, res) => {
     try {
         const { rideId } = req.query;
@@ -56,7 +55,7 @@ module.exports.acceptRide = async (req, res) => {
     }
 };
 
-// ✅ Start Ride
+
 module.exports.startRide = async (req, res) => {
     try {
         const { rideId } = req.query;
@@ -90,7 +89,7 @@ module.exports.startRide = async (req, res) => {
     }
 };
 
-// ✅ Complete Ride
+
 module.exports.completeRide = async (req, res) => {
     try {
         const { rideId } = req.query;
@@ -116,3 +115,4 @@ module.exports.completeRide = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
