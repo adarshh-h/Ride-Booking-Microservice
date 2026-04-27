@@ -18,7 +18,7 @@ module.exports.userAuth = async (req, res, next) => {
 
         // ✅ Step 2: Optional - fetch user from user service
         const response = await axios.get(
-            `http://localhost:3001/api/users/profile`,
+            `http://localhost:3000/api/users/profile`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -57,7 +57,7 @@ module.exports.captainAuth = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const response = await axios.get(
-            `http://localhost:3002/api/captains/profile`, // ✅ FIX THIS
+            `http://localhost:3000/api/captains/profile`, // ✅ FIX THIS
             {
                 headers: {
                     Authorization: `Bearer ${token}`,

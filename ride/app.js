@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 
-app.use('/api', rideRoutes);
+app.use('/api/rides', rideRoutes);
 
 
 module.exports = app;
